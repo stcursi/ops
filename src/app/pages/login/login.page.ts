@@ -21,7 +21,6 @@ export class LoginPage implements OnInit {
                 public authService: AuthService,
                 public authGuardService: AuthGuardService,
                 public loadingCtrl: LoadingController) {
-
     }
 
     ngOnInit() {
