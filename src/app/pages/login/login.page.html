@@ -1,9 +1,48 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-title>login</ion-title>
-  </ion-toolbar>
+
+    <ion-toolbar>
+        <ion-title color="primary">O. P. S</ion-title>
+    </ion-toolbar>
+
 </ion-header>
 
+
 <ion-content padding>
+    <ion-grid>
+        <ion-row justify-content-center>
+            <ion-img style="width: 80px; height: 120px;" src="../../../assets/images/pin.png"></ion-img>
+        </ion-row>
+        <ion-row justify-content-center>
+            <ion-col>
+                <ion-list inset>
+
+                    <ion-item>
+                        <ion-input type="text" placeholder="Email" name="email" [(ngModel)]="email"
+                                   required></ion-input>
+                    </ion-item>
+
+                    <ion-item>
+                        <ion-input type="password" placeholder="Password" name="password" [(ngModel)]="password"
+                                   required></ion-input>
+                    </ion-item>
+
+                </ion-list>
+            </ion-col>
+        </ion-row>
+    </ion-grid>
+
+    <ion-grid>
+        <ion-row justify-content-center>
+            <ion-button class="button-outline" (click)="login()">Login</ion-button>
+        </ion-row>
+
+        <ion-row justify-content-center>
+            <ion-label color="medium">Or</ion-label>
+        </ion-row>
+        <ion-row justify-content-center>
+            <ion-button class="button-small button-clear" color="danger" (click)="launchSignup()">Create New Account
+            </ion-button>
+        </ion-row>
+    </ion-grid>
 
 </ion-content>

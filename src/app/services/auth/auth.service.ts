@@ -1,8 +1,12 @@
 import {Injectable} from '@angular/core';
-import {HTTP} from '@ionic-native/http';
+import { Storage } from '@ionic/storage';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {NavController} from '@ionic/angular';
+import { handleError } from '../../util';
+import { JwtHelperService } from '@auth0/angular-jwt';
 import {User} from '../../models/user';
-import {Observable, BehaviorSubject, from} from 'rxjs';
-import {map} from 'rxjs/operators';
+import {Observable, BehaviorSubject, throwError} from 'rxjs';
+import {catchError, tap, map} from 'rxjs/operators';
 
 @Injectable({
     providedIn: 'root'
@@ -10,90 +14,97 @@ import {map} from 'rxjs/operators';
 export class AuthService {
 
     public token: any;
-    currentUser: User;
+    _currentUser: User;
     authenticationState = new BehaviorSubject(false);
 
-    constructor(public http: HTTP, public storage: Storage) {
-
+    constructor(private http: HttpClient, public storage: Storage,public navCtrl: NavController, public jwtHelper: JwtHelperService) {
     }
 
-    checkAuthentication() {
+    public async checkAuthentication() {
 
         // Load token if exists
-        this.storage.get('token').then((value) => {
+        await this.storage.get('token').then((value) => {
 
             this.token = value;
+            const httpOptions = {
+                headers: new HttpHeaders({'Authorization': this.token})
+            };
 
-            const headers = new Headers();
-            headers.append('Authorization', this.token);
-
-            this.http.get('https://opsbackend.herokuapp.com/api/auth/protected', {}, {headers: headers})
-                .then(res => {
-                    this.authenticationState.next(true);
-                });
+            return this.http.get('https://opsbackend.herokuapp.com/api/auth/protected', httpOptions)
+                .pipe(map(() => this.authenticationState.next(true)), catchError(handleError));
 
         });
     }
 
-    isAuthenticated(): boolean {
-        return this.authenticationState.value;
-    }
-
-    createAccount(details) {
-
-        const headers = new Headers();
-        headers.append('Content-Type', 'application/json');
-
-        return this.http.post('https://opsbackend.herokuapp.com/api/auth/register', details, {headers: headers})
-            .then((res) => {
-
-                const data = res.data;
-                this.token = data.token;
-                this.storage.set('token', data.token);
-                this.storage.set('currentUser', data.user);
-
-                Promise.resolve(data);
-
-            }).catch((err) => {
-                Promise.reject(err);
+    public isAuthenticated(): Promise<any> {
+        return this.storage.get('token').then((token) => {
+            return Promise.resolve(!this.jwtHelper.isTokenExpired(token));
+        })
+            .catch((err) => {
+                return Promise.reject(err);
             });
 
     }
 
-    login(credentials) {
+    createAccount(details): Observable<any> {
 
-        const headers = new Headers();
-        headers.append('Content-Type', 'application/json');
+        const httpOptions = {
+            headers: new HttpHeaders({'Content-Type': 'application/json'})
+        };
 
-        return new Promise((resolve, reject) => {
-            return this.http.post('https://opsbackend.herokuapp.com/api/auth/login',
-                JSON.stringify(credentials), {headers: headers})
-                .then((res) => {
-                    const data = res.data;
-                    this.currentUser = <User>data.user;
+        return this.http.post('https://opsbackend.herokuapp.com/api/auth/register', details, httpOptions)
+            .pipe(
+                map((res: any) => {
+                    if (res.data && res.data.token && res.data.user) {
+                        this.token = res.data.token;
+                        this.storage.set('token', res.data.token);
+                        this.storage.set('currentUser', res.data.user);
+
+                        return res.data;
+                    }
+                }), catchError(handleError));
+
+    }
+
+    login(credentials): Observable<any> {
+
+        const httpOptions = {
+            headers: new HttpHeaders({'Content-Type': 'application/json'})
+        };
+
+        return this.http.post('https://opsbackend.herokuapp.com/api/auth/login',
+            JSON.stringify(credentials), httpOptions)
+            .pipe(map((res: any) => {
+                if (res) {
+                    const data = res;
+                    this._currentUser = <User>data.user;
                     this.token = data.token;
                     this.storage.set('currentUser', data.user);
                     this.storage.set('token', data.token);
-                    resolve();
-                })
-                .catch(err => reject(err));
-        });
+                } else {
+                    return throwError('[Login] - Server response with empty data.');
+                }
+            }), catchError(handleError));
     }
 
     logout() {
-        this.storage.set('token', '');
+        this.storage.remove('token');
+        this.storage.remove('currentUser');
+        this.navCtrl.navigateForward('/login');
     }
 
     setCurrentUser() {
 
         this.storage.get('currentUser').then((value) => {
-            this.currentUser = <User>value;
-            console.log(this.currentUser);
+                this._currentUser = <User>value;
+                console.log(this._currentUser);
+                this.navCtrl.navigateForward('/tabs');
         });
 
     }
 
-    getCurrentUser() {
-        return this.currentUser;
+    get currentUser() {
+        return this._currentUser;
     }
+
 }

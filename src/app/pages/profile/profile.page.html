@@ -1,0 +1,36 @@
+<ion-header>
+
+    <ion-toolbar>
+        <ion-title>{{currentUser.name}}</ion-title>
+    </ion-toolbar>
+
+</ion-header>
+
+
+<ion-content padding>
+
+    <div align="center">
+        <ion-avatar style="margin: 25px;">
+            <img class="profile-image" [src]="avatarPath">
+        </ion-avatar>
+
+        <ion-label color="primary" stacked>{{currentUser.email}}</ion-label>
+    </div>
+    <ion-list>
+        <ion-item>
+            <ion-label>Friends</ion-label>
+            <ion-button color="secondary" block (click)="showFriends()">{{friends.length}}</ion-button>
+        </ion-item>
+        <ion-item>
+            <ion-label>Messages</ion-label>
+            <ion-button color="secondary" block (click)="showMessages()">0</ion-button>
+        </ion-item>
+        <ion-item>
+            <ion-button color="danger" block (click)="logout()">
+                <ion-icon name="ios-send" item-left></ion-icon>
+                Logout
+            </ion-button>
+        </ion-item>
+
+    </ion-list>
+</ion-content>
